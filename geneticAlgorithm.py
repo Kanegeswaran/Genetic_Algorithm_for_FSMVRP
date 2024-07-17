@@ -5,8 +5,23 @@ import random
 import math
 
 class GeneticAlgorithm:
+    """
+    Class to represent a Genetic Algorithm for solving the Vehicle Routing Problem (VRP).
+    """
     def __init__(self, graph: Graph, customers: list[Customer], vehicles, depot: Customer, population_size=100, generations=1000, 
                   crossover_rate = 0.8, selection_rate=0.5, mutation_rate=0.1):
+        """
+        Initialize a GeneticAlgorithm object.
+
+        :param graph: The graph representing adjacent matrix of distances between customers and depot
+        :param customers: A list of customers
+        :param vehicles: A list of vehicles
+        :param population_size: The number of routes in the population
+        :param generations: The number of generations to run the algorithm
+        :param crossover_rate: The rate at which crossover occur
+        :param selection_rate: The rate at which selection occur
+        :param mutation_rate: The rate at which mutations occur
+        """
         self.graph = graph
         self.customers = customers
         self.vehicles = vehicles
@@ -18,17 +33,31 @@ class GeneticAlgorithm:
         self.crossover_rate = crossover_rate
 
     def create_individual(self) -> tuple[list[Customer], dict[int, Vehicle]]:
+        """
+        Generate individual for initial population randomly.
+        """
         individual = random.sample(self.customers, len(self.customers))
         return self.split_genes(individual)
 
     def create_population(self) -> list[tuple[list[Customer], dict[int, Vehicle]]]:
+        """
+        Create initial population.
+        """
+        # find the initial solution using Clarke Wright Saving algorithm for each vehicle type
         h_population1 = [self.savings_algo(v) for v in self.vehicles]
+        # find the initial solution using Gillett Miller Sweep algorithm for each vehicle type
         h_population2 = [self.sweep_algo(v) for v in self.vehicles]
 
+        # the initial solutions from the heuristics algorithms added with randomly generated solutions as initial population
         return h_population1 + h_population2 + [self.create_individual() for _ in range(self.population_size - len(h_population1) - len(h_population2))]
         # return [self.create_individual() for _ in range(self.population_size)]
 
     def calc_savings(self) -> list[tuple[float, Customer, Customer]]:
+        """
+        Calculate the savings of every pair of customers according to Saving Algorithm.
+
+        :return: A list of sorted pair of customer in descending order of saved cost
+        """
         savings = []
         for i in range(len(self.customers)):
             for j in range(i + 1, len(self.customers)):
@@ -39,6 +68,9 @@ class GeneticAlgorithm:
         return sorted(savings, key=lambda x: x[0], reverse=True)
     
     def savings_algo(self, vehicle: Vehicle) -> tuple[list[Customer], dict[int, Vehicle]]:
+        """
+        Perform the Saving Algorithm.
+        """
         routes = [] 
         for cus in self.customers:
             routes.append([cus])
@@ -71,12 +103,20 @@ class GeneticAlgorithm:
         return genes
     
     def calculate_polar_angle(self, customer: Customer) -> float:
+        """
+        Calculate the angle of from depot according to Sweep Algorithm.
+
+        :return: the angle of a customer from depot
+        """
         y_diff = customer.latitude - self.depot.latitude
         x_diff = customer.longitude - self.depot.longitude
         angle = math.atan2(y_diff, x_diff) * 180 / math.pi
         return angle if angle >= 0 else angle + 360
     
     def sweep_algo(self, vehicle: Vehicle) -> tuple[list[Customer], dict[int, Vehicle]]:
+        """
+        Perform the Sweep Algorithm.
+        """
         customers = sorted(self.customers, key=lambda customer: self.calculate_polar_angle(customer))
         
         genes = ([], {})
@@ -100,6 +140,9 @@ class GeneticAlgorithm:
         return genes
 
     def split_genes(self, individual: list[Customer]) -> tuple[list[Customer], dict[int, Vehicle]]:
+        """
+        Assign vechicles for randomly generated individuals.
+        """
         genes = ([], {})
         current_route = []
         current_demand = 0
@@ -124,6 +167,9 @@ class GeneticAlgorithm:
         return genes
 
     def fitness(self, individual:tuple[list[Customer], dict[int, Vehicle]]) -> float:
+        """
+        Evaluate the fitness of each route in the population.
+        """
         genes, routes = individual
         total_cost = 0
         i = 0
@@ -133,10 +179,22 @@ class GeneticAlgorithm:
         return 1 / total_cost  # Higher fitness for lower cost
 
     def tournament_selection(self, population: list[tuple[list[Customer], dict[int, Vehicle]]], tournament_size=3) -> tuple[list[Customer], dict[int, Vehicle]]:
+        """
+        Select parents for crossover using a tournament selection method.
+
+        :return: selected parent routes with highest fitness score
+        """
         tournament = random.sample(population, tournament_size)
         return max(tournament, key=self.fitness)
     
     def crossover(self, parent1: tuple[list[Customer], dict[int, Vehicle]], parent2: tuple[list[Customer], dict[int, Vehicle]]) -> tuple[list[Customer], dict[int, Vehicle]]:
+        """
+        Perform crossover between two parents to create a child route.
+
+        :param parent1: The first parent route
+        :param parent2: The second parent route
+        :return: A child route resulting from the crossover
+        """
         if random.random() > self.crossover_rate:
             return parent1
 
@@ -148,6 +206,11 @@ class GeneticAlgorithm:
         return self.split_genes(child)
 
     def mutate(self, individual: tuple[list[Customer], dict[int, Vehicle]]) -> tuple[list[Customer], dict[int, Vehicle]]:
+        """
+        Mutate a individual with a given mutation rate by shuffling route of a randomly selected vechicle in the individual.
+
+        :param route: The mutated individual
+        """
         if random.random() < self.mutation_rate:
             genes, routes = individual
             mutated_genes = []
@@ -163,6 +226,11 @@ class GeneticAlgorithm:
         return individual
 
     def run(self) -> tuple[list[Customer], dict[int, Vehicle]]:
+        """
+        Run the genetic algorithm for a specified number of generations.
+
+        :return: The best solution found by the algorithm
+        """
         population = self.create_population()
         # print("population 0 : \n", population, "\n")
 

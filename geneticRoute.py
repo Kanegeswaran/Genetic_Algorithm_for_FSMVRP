@@ -5,6 +5,12 @@ from geneticAlgorithm import GeneticAlgorithm
 import random
 
 def read_customers(file_path: str) -> list[Customer]: 
+    """
+    Read customer data from a file and return a list of Customer objects.
+
+    :param file_path: Path to the file containing customer data
+    :return: List of Customer objects
+    """
     customers = []
     with open(file_path, 'r') as file:
         lines = file.readlines()
@@ -21,6 +27,12 @@ def read_customers(file_path: str) -> list[Customer]:
     return customers
 
 def read_vehicles(file_path: str) -> list[Vehicle]:
+    """
+    Read vehicle data from a file and return a list of Vehicle objects.
+
+    :param file_path: Path to the file containing vehicle data
+    :return: List of Vehicle objects
+    """
     vehicles = []
     with open(file_path, 'r') as file:
         lines = file.readlines()
@@ -36,12 +48,22 @@ def read_vehicles(file_path: str) -> list[Vehicle]:
     return vehicles
 
 if __name__ == "__main__" :
+    """
+    Main block to execute the genetic algorithm for vehicle routing.
+    """
     random.seed(9)
 
+    # Reading customers and vehicles from input files
     customers = read_customers("C:\\Users\\kanag\\Desktop\\modefair\\customers_input.txt")
     vehicles = read_vehicles("C:\\Users\\kanag\\Desktop\\modefair\\vehicles_input.txt")
+
+    # Creating a graph with customers
     graph = Graph(customers)
+
+    # Extracting the depot (first customer) from the list
     depot = customers.pop(0)
+
+    # Initializing and running the genetic algorithm
     ga = GeneticAlgorithm(graph, customers, vehicles, depot)
     best_solution = ga.run()
     genes, routes = best_solution
@@ -49,6 +71,8 @@ if __name__ == "__main__" :
     total_cost = 0
     trips = []
     i = 0
+
+    # Calculating total distance and cost for the best solution
     for route in routes:
         current_customers, current_vehicle = genes[i:route], routes[route]
         i = route
@@ -57,6 +81,7 @@ if __name__ == "__main__" :
         total_dist += sum(trip[0])
         trips.append((current_vehicle, trip, current_customers))
 
+    # Printing the results
     print(f"Total Distance = {total_dist:.3f} km")
     print(f"Total Cost = RM {total_cost:.2f}\n")
 
