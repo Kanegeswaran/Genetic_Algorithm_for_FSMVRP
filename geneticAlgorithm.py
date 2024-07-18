@@ -192,7 +192,8 @@ class GeneticAlgorithm:
         for route in routes:
             total_cost += self.graph.calc_route_cost(genes[i:route], routes[route])
             i = route
-        return 1 / total_cost  # Higher fitness for lower cost
+        return 1 / total_cost # Higher fitness for lower cost
+        # return round(((1 / total_cost) * 100), 2)
 
     def tournament_selection(self, population: list[tuple[list[Customer], dict[int, Vehicle]]], tournament_size=3) -> tuple[list[Customer], dict[int, Vehicle]]:
         """
@@ -263,7 +264,7 @@ class GeneticAlgorithm:
         # print("population 0 : \n", population, "\n")
 
         # run the genetic algorithm for (default = 1000) generations
-        for _ in range(self.generations):
+        for i in range(self.generations):
             # sort the population by the population having the highest fitness score
             population = sorted(population, key=self.fitness, reverse=True)
             # select selection_rate*population size of individuals that have the highest fitness score
@@ -277,8 +278,12 @@ class GeneticAlgorithm:
                 child = self.mutate(child)
                 new_population.append(child)
             population = new_population
+            # local_best = max(population, key=self.fitness)
+            # print("best score (", i, "): ", self.fitness(local_best))
+            # avg = sum(self.fitness(individual) for individual in population)/self.population_size
+            # print("Avg score (", i, "): ", round(avg, 2))
 
-            # print("population ", _ , ": \n", population, "\n")
+            # print("population ", i , ": \n", population, "\n")
 
         best_individual = max(population, key=self.fitness)
         return best_individual
