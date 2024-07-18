@@ -58,6 +58,7 @@ class GeneticAlgorithm:
 
         :return: A list of sorted pair of customer in descending order of saved cost
         """
+        
         savings = []
         for i in range(len(self.customers)):
             for j in range(i + 1, len(self.customers)):
@@ -71,28 +72,33 @@ class GeneticAlgorithm:
         """
         Perform the Saving Algorithm.
         """
-        routes = [] 
+        routes = []
+        # creating list of routes, as each route visit a customer
         for cus in self.customers:
             routes.append([cus])
         
+        # Calculate the savings of every pair of customers
         savings = self.calc_savings()
 
         for saving, i, j in savings:
             route_i = None
             route_j = None
 
+            # retrieving the route of the pair from the list of routes generated initially
             for route in routes:
                 if route[0] == i or route[-1] == i:
                     route_i = route
                 if route[0] == j or route[-1] == j:
                     route_j = route
           
+            # combining the route of pairs of customers, if the route still exist
             if route_i and route_j and route_i != route_j and sum(r.demand for r in route_i) + sum(r.demand for r in route_j) <= vehicle.capacity:
                 if route_i[-1] == i and route_j[0] ==j:
                     merged_route = route_i + route_j
                     routes[routes.index(route_i)] = merged_route
                     routes.remove(route_j)
 
+        # assign the solution into individual 
         genes = ([], {})
         i = 0
         for route in routes:
@@ -117,6 +123,7 @@ class GeneticAlgorithm:
         """
         Perform the Sweep Algorithm.
         """
+        # sort the customers by the customer having the smallest polar angle from depot
         customers = sorted(self.customers, key=lambda customer: self.calculate_polar_angle(customer))
         
         genes = ([], {})
@@ -124,15 +131,18 @@ class GeneticAlgorithm:
         current_demand = 0
         
         for i, customer in enumerate(customers):
+            # appending the customer from the individual to the vehicle route and make sure that the capacity of selected vehicle doesnt exceeded
             if current_demand + customer.demand <= vehicle.capacity:
                 current_route.append(customer)
                 current_demand += customer.demand
             else:
                 genes[0].extend(current_route)
                 genes[1].update({i:vehicle})
+                # if the capacity of the vehicle is full, assign next customer to new route of new randomly selected vehicle
                 current_route = [customer]
                 current_demand = customer.demand
 
+        #if the last route exist as it may not full the capcity of the vehicle, insert it into the individual
         if current_route:
             genes[0].extend(current_route)
             genes[1].update({i+1:vehicle})
@@ -146,9 +156,11 @@ class GeneticAlgorithm:
         genes = ([], {})
         current_route = []
         current_demand = 0
+        # randomly choosing a vehicle type
         current_vehicle = random.choice(self.vehicles)
 
         for i,customer in enumerate(individual):
+            # appending the customer from the individual to the vehicle route and make sure that the capacity of selected vehicle doesnt exceeded
             if current_demand + customer.demand <= current_vehicle.capacity:
                 current_route.append(customer)
                 current_demand += customer.demand
@@ -156,10 +168,12 @@ class GeneticAlgorithm:
                 if current_route:
                     genes[0].extend(current_route)
                     genes[1].update({i:current_vehicle})
+                # if the capacity of the vehicle is full, assign next customer to new route of new randomly selected vehicle
                 current_route = [customer]
                 current_demand = customer.demand
                 current_vehicle = random.choice(self.vehicles)
-
+        
+        #if the last route exist as it may not full the capcity of the vehicle, insert it into the individual
         if current_route:
             genes[0].extend(current_route)
             genes[1].update({i+1:current_vehicle})
@@ -173,6 +187,8 @@ class GeneticAlgorithm:
         genes, routes = individual
         total_cost = 0
         i = 0
+
+        # calculating the total cost the routes of all vehicles in the individual
         for route in routes:
             total_cost += self.graph.calc_route_cost(genes[i:route], routes[route])
             i = route
@@ -184,6 +200,8 @@ class GeneticAlgorithm:
 
         :return: selected parent routes with highest fitness score
         """
+
+        # randomly choose three individual from the population and return the best one
         tournament = random.sample(population, tournament_size)
         return max(tournament, key=self.fitness)
     
@@ -195,11 +213,16 @@ class GeneticAlgorithm:
         :param parent2: The second parent route
         :return: A child route resulting from the crossover
         """
+
+        # make sure that the crossover rate achieved
         if random.random() > self.crossover_rate:
             return parent1
 
+        # select a random crossover point from its routes
         crossover_point = random.randint(1, len(parent1[0]) - 1)
+        # slice the parent1 till the crossover point adn assign to child
         child = parent1[0][:crossover_point]
+        # add the missed out customers from parent2 into child
         for customer in parent2[0]:
             if customer not in child:
                 child.append(customer)
@@ -211,15 +234,19 @@ class GeneticAlgorithm:
 
         :param route: The mutated individual
         """
+
+        # make sure that the mutation rate achieved
         if random.random() < self.mutation_rate:
             genes, routes = individual
             mutated_genes = []
             i = 0
+            # randomly generate a int between 0 to total number of vehicles in the individual to choose one vehicle randomly
             r = random.randint(0,len(routes))
             for j, route in enumerate(routes):
                 new_genes = genes[i:route]
                 i = route
                 if r==j:
+                    # shuffle the route of the chosen vehicle
                     random.shuffle(new_genes)
                 mutated_genes.extend(new_genes)
             return (mutated_genes, routes)
@@ -231,21 +258,26 @@ class GeneticAlgorithm:
 
         :return: The best solution found by the algorithm
         """
+        # create initial population
         population = self.create_population()
         # print("population 0 : \n", population, "\n")
 
+        # run the genetic algorithm for (default = 1000) generations
         for _ in range(self.generations):
+            # sort the population by the population having the highest fitness score
             population = sorted(population, key=self.fitness, reverse=True)
+            # select selection_rate*population size of individuals that have the highest fitness score
             population = new_population = population[:int(self.selection_rate*self.population_size)]  # Elitism
 
+            # Do crossover and mutation in the selected population to replace the neglected individuals
             while len(new_population) < self.population_size:
                 parent1 = self.tournament_selection(population)
                 parent2 = self.tournament_selection(population)
                 child = self.crossover(parent1, parent2)
                 child = self.mutate(child)
                 new_population.append(child)
-
             population = new_population
+
             # print("population ", _ , ": \n", population, "\n")
 
         best_individual = max(population, key=self.fitness)
