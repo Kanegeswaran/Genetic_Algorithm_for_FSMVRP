@@ -3,6 +3,7 @@ from vehicle import Vehicle
 from graph import Graph
 from geneticAlgorithm import GeneticAlgorithm
 import random
+import matplotlib.pyplot as plt
 
 def read_customers(file_path: str) -> list[Customer]: 
     """
@@ -80,6 +81,16 @@ if __name__ == "__main__" :
         trip = graph.route_dist(current_customers)
         total_dist += sum(trip[0])
         trips.append((current_vehicle, trip, current_customers))
+
+    # Plotting the results
+    plt.figure(figsize=(10,5))
+    plt.plot(ga.best_fitness_per_generation, label='Best Fitness')
+    plt.plot(ga.avg_fitness_per_generation, label='Average Fitness')
+    plt.xlabel('Generation')
+    plt.xlabel('Fitness')
+    plt.title('Best Fit and Average Fit vs Generation')
+    plt.legend()
+    plt.show()
 
     # Printing the results
     print(f"Total Distance = {total_dist:.3f} km")

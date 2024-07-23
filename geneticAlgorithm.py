@@ -31,6 +31,8 @@ class GeneticAlgorithm:
         self.selection_rate = selection_rate
         self.mutation_rate = mutation_rate
         self.crossover_rate = crossover_rate
+        self.best_fitness_per_generation = []
+        self.avg_fitness_per_generation = []
 
     def create_individual(self) -> tuple[list[Customer], dict[int, Vehicle]]:
         """
@@ -278,10 +280,12 @@ class GeneticAlgorithm:
                 child = self.mutate(child)
                 new_population.append(child)
             population = new_population
-            # local_best = max(population, key=self.fitness)
+            local_best = max(population, key=self.fitness)
             # print("best score (", i, "): ", self.fitness(local_best))
-            # avg = sum(self.fitness(individual) for individual in population)/self.population_size
+            self.best_fitness_per_generation.append(self.fitness(local_best))
+            avg = sum(self.fitness(individual) for individual in population)/self.population_size
             # print("Avg score (", i, "): ", round(avg, 2))
+            self.avg_fitness_per_generation.append(avg)
 
             # print("population ", i , ": \n", population, "\n")
 
