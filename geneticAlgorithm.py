@@ -272,6 +272,10 @@ class GeneticAlgorithm:
             # select selection_rate*population size of individuals that have the highest fitness score
             population = new_population = population[:int(self.selection_rate*self.population_size)]  # Elitism
 
+            # Adaptable selection rate
+            # self.selection_rate = 0.3 + (0.8 - 0.3)/(self.generations) * i
+            # self.selection_rate = 0.8 - (0.8 - 0.3)/(self.generations) * i
+
             # Do crossover and mutation in the selected population to replace the neglected individuals
             while len(new_population) < self.population_size:
                 parent1 = self.tournament_selection(population)
